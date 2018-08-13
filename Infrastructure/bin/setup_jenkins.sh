@@ -33,4 +33,25 @@ oc new-build --name=jenkins-slave-appdev \
     --dockerfile="$(< ./Infrastructure/templates/docker/skopeo/Dockerfile)" \
     -n $GUID-jenkins
 
+# create pipeline for national  parks
 oc create -f ./Infrastructure/templates/nationalparks_pipeline.yaml -n $GUID-jenkins
+# set env for national  parks
+oc env bc/nationalparks-pipeline GUID=$GUID CLUSTER=$CLUSTER -n $GUID-jenkins
+
+# create pipeline for mlb  parks
+oc create -f ./Infrastructure/templates/mlbparks_pipeline.yaml -n $GUID-jenkins
+# set env for mlb  parks
+oc env bc/mlbparks-pipeline GUID=$GUID CLUSTER=$CLUSTER -n $GUID-jenkins
+
+# create pipeline for parksmap
+oc create -f ./Infrastructure/templates/parksmap_pipeline.yaml -n $GUID-jenkins
+# set env for parksmap
+oc env bc/parksmap-pipeline GUID=$GUID CLUSTER=$CLUSTER -n $GUID-jenkins
+
+
+# Setup Permissions to prod and dev
+oc policy add-role-to-user edit system:serviceaccount:$GUID-jenkins:default -n ${GUID}-parks-dev
+oc policy add-role-to-user edit system:serviceaccount:$GUID-jenkins:default -n ${GUID}-parks-prod
+oc policy add-role-to-user edit system:serviceaccount:$GUID-jenkins:jenkins -n ${GUID}-parks-dev
+oc policy add-role-to-user edit system:serviceaccount:$GUID-jenkins:jenkins -n ${GUID}-parks-prod
+    
