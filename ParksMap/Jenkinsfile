@@ -46,22 +46,27 @@ podTemplate(
     def prodTag = "${version}"
 
     // Using Maven build the jar file
-    // Do not run tests in this step
-    stage('Build jar') {
+    stage('Build Parksmap Jar') {
       echo "Building version ${version}"
       sh "${mvnCmd} clean package spring-boot:repackage -DskipTests -Dcom.redhat.xpaas.repo.redhatga"
     }
 
-    // Using Maven run the unit tests
+    // run the unit tests
     stage('Unit Tests') {
       echo "Running Unit Tests"
       sh "${mvnCmd} test"
     }
 
-    // Using Maven call SonarQube for Code Analysis
+    //  call SonarQube for Code Analysis
     stage('Code Analysis') {
       echo "Running Code Analysis"
       sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://docker-openshift-sonarqube-${GUID}-sonarqube.apps.${CLUSTER} -Dsonar.projectName=${JOB_BASE_NAME}-${devTag}"
+    }
+
+    // Publish the built war file to Nexus
+    stage('Publish to Nexus') {
+      echo "Publish to Nexus"
+      sh "${mvnCmd} deploy -DskipTests=true -DaltDeploymentRepository=nexus::default::http://nexus3.${GUID}-nexus.svc.cluster.local:8081/repository/releases"
     }
 
     
