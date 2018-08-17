@@ -1,5 +1,5 @@
 def GUID="prima"
-def CLUSTER = "master.na39.openshift.opentlc.com"
+def CLUSTER = "na39.openshift.opentlc.com"
 // Jenkinsfile for ParksMap
 podTemplate(
   label: "skopeo-pod",
