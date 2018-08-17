@@ -1,3 +1,5 @@
+def GUID="prima"
+def CLUSTER = "master.na39.openshift.opentlc.com"
 // Jenkinsfile for ParksMap
 podTemplate(
   label: "skopeo-pod",
@@ -20,6 +22,51 @@ podTemplate(
     // You need to build the application in directory `ParksMap`.
     // Also copy "../nexus_settings.xml" to your build directory
     // and replace 'GUID' in the file with your ${GUID} to point to >your< Nexus instance
+
+    def projectName="ParksMap"
+    def mvnCmd = "mvn -s ./nexus_settings.xml -f ${projectName}/pom.xml"
+    // def mvnCmd = "mvn"
+
+    // Checkout Source Code
+    stage('Checkout Source') {
+      git url: "https://github.com/primashah/openshift_homework.git"
+    }
+
+    // The following variables need to be defined at the top level
+    // and not inside the scope of a stage - otherwise they would not
+    // be accessible from other stages.
+    // Extract version and other properties from the pom.xml
+    def groupId    = getGroupIdFromPom("${projectName}/pom.xml")
+    def artifactId = getArtifactIdFromPom("${projectName}/pom.xml")
+    def version    = getVersionFromPom("${projectName}/pom.xml")
+
+    // Set the tag for the development image: version + build number
+    def devTag  = "${version}-${BUILD_NUMBER}"
+    // Set the tag for the production image: version
+    def prodTag = "${version}"
+
+    // Using Maven build the jar file
+    // Do not run tests in this step
+    stage('Build jar') {
+      echo "Building version ${version}"
+      sh "${mvnCmd} clean package spring-boot:repackage -DskipTests -Dcom.redhat.xpaas.repo.redhatga"
+    }
+
+    // Using Maven run the unit tests
+    stage('Unit Tests') {
+      echo "Running Unit Tests"
+      sh "${mvnCmd} test"
+    }
+
+    // Using Maven call SonarQube for Code Analysis
+    stage('Code Analysis') {
+      echo "Running Code Analysis"
+      sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://docker-openshift-sonarqube-${GUID}-sonarqube.apps.${CLUSTER} -Dsonar.projectName=${JOB_BASE_NAME}-${devTag}"
+    }
+
+    
+
+    
 
   }
 }

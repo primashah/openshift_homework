@@ -28,10 +28,18 @@ echo "Setting up Jenkins in project ${GUID}-jenkins from Git Repo ${REPO} for Cl
 
 # To be Implemented by Student
 oc policy add-role-to-user edit system:serviceaccount:$GUID-jenkins:jenkins -n $GUID-jenkins
-# build skopeo slave
+
+oc new-app jenkins-persistent \
+    --param ENABLE_OAUTH=true \
+    --param MEMORY_LIMIT=1Gi \
+    --param VOLUME_CAPACITY=4Gi \
+    -n $GUID-jenkins
+
+# build skopeo slave that will be used by JenkinsFile in the prjoect later
 oc new-build --name=jenkins-slave-appdev \
     --dockerfile="$(< ./Infrastructure/templates/docker/skopeo/Dockerfile)" \
     -n $GUID-jenkins
+
 
 # create pipeline for national  parks
 oc create -f ./Infrastructure/templates/nationalparks_pipeline.yaml -n $GUID-jenkins
@@ -54,4 +62,6 @@ oc policy add-role-to-user edit system:serviceaccount:$GUID-jenkins:default -n $
 oc policy add-role-to-user edit system:serviceaccount:$GUID-jenkins:default -n ${GUID}-parks-prod
 oc policy add-role-to-user edit system:serviceaccount:$GUID-jenkins:jenkins -n ${GUID}-parks-dev
 oc policy add-role-to-user edit system:serviceaccount:$GUID-jenkins:jenkins -n ${GUID}-parks-prod
-    
+
+
+oc set resources dc/jenkins --requests=cpu=1,memory=1Gi --limits=cpu=2,memory=2Gi -n ${GUID}-jenkins

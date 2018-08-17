@@ -172,7 +172,6 @@ objects:
     name: nexus3
     namespace: ${GUID}-nexus
   spec:
-    clusterIP: 172.30.34.17
     ports:
     - name: 8081-tcp
       port: 8081

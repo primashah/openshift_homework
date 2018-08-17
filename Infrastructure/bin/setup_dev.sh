@@ -45,12 +45,12 @@ oc create configmap parks-mongodb-config \
     --from-literal=DB_REPLICASET=rs0\
     -n $GUID-parks-dev
 
-echo "Creating apps in project ${GUID}-parks-dev"
+echo "Creating parksmap app in project ${GUID}-parks-dev"
 oc new-build --binary=true --name=parksmap \
     --image-stream=redhat-openjdk18-openshift:1.2 \
     --allow-missing-imagestream-tags=true -n $GUID-parks-dev
 
-oc new-app $GUID-parks-dev/parksmap:0.0-0 --name=parksmap \
+oc new-app $GUID-parks-dev/parksmap:latest --name=parksmap \
     --allow-missing-imagestream-tags=true \
     --allow-missing-images=true \
     -l type=parksmap-frontend \
@@ -67,3 +67,78 @@ oc set probe dc/parksmap --readiness \
     --get-url=http://:8080/ws/healthz/ --initial-delay-seconds=30 -n $GUID-parks-dev
 oc set probe dc/parksmap --liveness \
     --get-url=http://:8080/ws/healthz/ --initial-delay-seconds=30 -n $GUID-parks-dev
+
+echo "Creating nationalparks app in project ${GUID}-parks-dev"
+oc new-build --binary=true \
+        --name=nationalparks \
+        --image-stream=redhat-openjdk18-openshift:1.2 \
+        --allow-missing-imagestream-tags=true \
+        -n $GUID-parks-dev
+
+# deployment config
+
+oc new-app $GUID-parks-dev/nationalparks:latest --name=nationalparks \
+    --allow-missing-imagestream-tags=true \
+    --allow-missing-images=true \
+    -l type=parksmap-backend \
+    -e APPNAME="National Parks (Dev)" \
+    -e DB_HOST=$MONGODB_SERVICE_NAME \
+    -e DB_PORT=27017 \
+    -e DB_USERNAME=$MONGODB_USERNAME \
+    -e DB_PASSWORD=$MONGODB_PASSWORD \
+    -e DB_NAME=$MONGODB_DATABASE \
+    -n $GUID-parks-dev
+
+
+# create environment from configmap
+oc set env dc/nationalparks --from configmap/parks-mongodb-config -n $GUID-parks-dev
+# remove triggers for auto deployment
+oc set triggers dc/nationalparks --remove-all -n $GUID-parks-dev
+
+#create service
+oc create service clusterip nationalparks --tcp=8080 -n $GUID-parks-dev
+#expose service as route
+oc expose svc/nationalparks --port=8080 --name=nationalparks -n $GUID-parks-dev
+
+oc set probe dc/nationalparks --readiness \
+    --get-url=http://:8080/ws/healthz/ --initial-delay-seconds=30 -n $GUID-parks-dev
+oc set probe dc/nationalparks --liveness \
+    --get-url=http://:8080/ws/healthz/ --initial-delay-seconds=30 -n $GUID-parks-dev
+
+echo "Creating mlbparks app in project ${GUID}-parks-dev"
+oc new-build --binary=true --name=mlbparks --image-stream=jboss-eap70-openshift:1.7 \
+--allow-missing-imagestream-tags=true \
+-n $GUID-parks-dev
+
+oc new-app $GUID-parks-dev/mlbparks:latest --name=mlbparks --allow-missing-imagestream-tags=true \
+--allow-missing-images=true \
+-l type=parksmap-backend \
+ -e APPNAME="MLB Parks (Dev)" \
+    -e DB_HOST=$MONGODB_SERVICE_NAME \
+    -e DB_PORT=27017 \
+    -e DB_USERNAME=$MONGODB_USERNAME \
+    -e DB_PASSWORD=$MONGODB_PASSWORD \
+    -e DB_NAME=$MONGODB_DATABASE \
+    -n $GUID-parks-dev
+
+oc set env dc/mlbparks --from configmap/parks-mongodb-config -n $GUID-parks-dev
+oc set triggers dc/mlbparks --remove-all -n $GUID-parks-dev
+
+oc create service clusterip mlbparks --tcp=8080 -n $GUID-parks-dev
+
+oc expose svc/mlbparks --port=8080 --name=mlbparks -n $GUID-parks-dev
+
+oc set probe dc/mlbparks --readiness --get-url=http://:8080/ws/healthz/ --initial-delay-seconds=30 -n $GUID-parks-dev
+
+oc set probe dc/mlbparks --liveness --get-url=http://:8080/ws/healthz/ --initial-delay-seconds=30 -n $GUID-parks-dev
+
+
+
+            
+        
+
+
+
+
+
+
