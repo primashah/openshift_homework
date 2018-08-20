@@ -116,7 +116,8 @@ podTemplate(
       echo "Destination Application: " + destApp
 
       sh "oc tag ${GUID}-parks-dev/nationalparks:${devTag} ${GUID}-parks-prod/${destApp}:${prodTag}"
-      sh "oc set image dc/${destApp} ${destApp}=docker-registry.default.svc:5000/$GUID-parks-prod/${destApp}:${prodTag} -n $GUID-parks-prod"
+      
+      sh "oc set image dc/${destApp} nationalparks=${destApp}:${prodTag} --source=istag -n ${GUID}-parks-prod"
     }
 
     stage('Switch over to new Version') {
