@@ -122,9 +122,11 @@ podTemplate(
       echo "Active Application:      " + activeApp
       echo "Destination Application: " + destApp
 
-      sh "oc tag ${GUID}-parks-dev/parksmap:${devTag} ${GUID}-parks-prod/${destApp}:${prodTag}"
+      sh "oc tag ${GUID}-parks-dev/parksmap:${devTag} ${GUID}-parks-prod/${destApp}:${prodTag} -n ${GUID}-parks-prod"
       //Creates image stream
-      sh "oc set image dc/${destApp} ${destApp}=docker-registry.default.svc:5000/$GUID-parks-prod/${destApp}:${prodTag} -n $GUID-parks-prod"
+      //sh "oc set image dc/${destApp} ${destApp}=docker-registry.default.svc:5000/$GUID-parks-prod/${destApp}:${prodTag} -n $GUID-parks-prod"
+
+      sh "oc set image dc/${destApp} parksmap=parksmap:${prodTag} --source=istag -n ${GUID}-parks-prod"
     }
     
 
