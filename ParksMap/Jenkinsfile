@@ -126,7 +126,7 @@ podTemplate(
       //Creates image stream
       //sh "oc set image dc/${destApp} ${destApp}=docker-registry.default.svc:5000/$GUID-parks-prod/${destApp}:${prodTag} -n $GUID-parks-prod"
 
-      sh "oc set image dc/${destApp} parksmap=parksmap:${prodTag} --source=istag -n ${GUID}-parks-prod"
+      sh "oc set image dc/${destApp} parksmap=${destApp}:${prodTag} --source=istag -n ${GUID}-parks-prod"
     }
     
 
