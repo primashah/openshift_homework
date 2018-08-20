@@ -48,7 +48,7 @@ podTemplate(
     
     stage('Build jar') {
       echo "Building version ${version}"
-      sh "${mvnCmd} clean package spring-boot:repackage -DskipTests -Dcom.redhat.xpaas.repo.redhatga"
+      sh "${mvnCmd} clean package -Dmaven.test.skip=true"
     }
 
     
