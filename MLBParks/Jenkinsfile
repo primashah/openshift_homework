@@ -23,7 +23,7 @@ podTemplate(
     // Also copy "../nexus_settings.xml" to your build directory
     // and replace 'GUID' in the file with your ${GUID} to point to >your< Nexus instance
 
-    def projectName="mlbparks"
+    def projectName="MLBParks"
     def mvnCmd = "mvn -s ./nexus_settings.xml -f ${projectName}/pom.xml"
     // def mvnCmd = "mvn"
 
