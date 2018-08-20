@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: List
+items:
+- kind: Secret
+  apiVersion: v1
+  data:
+    database-name: cGFya3M=
+    database-password: bW9uZ29kYg==
+    database-user: bW9uZ29kYg==
+  metadata:
+    annotations:
+      template.openshift.io/expose-admin_password: '{.data[''database-admin-password'']}'
+      template.openshift.io/expose-keyfile_value: '{.data[''database-keyfile-value'']}'
+      template.openshift.io/expose-database_name: '{.data[''database-name'']}'
+      template.openshift.io/expose-password: '{.data[''database-password'']}'
+      template.openshift.io/expose-username: '{.data[''database-user'']}'
+    creationTimestamp: null
+    labels:
+      name: mongodb
+    name: mongodb
+  stringData:
+    database-admin-password: "${MONGODB_ADMIN_PASSWORD_PARAM}"
+    database-keyfile-value: "SAMPLEKEYFILEVALUE"
+  type: Opaque
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: mongodb-internal-service
+    labels:
+      name: mongodb-internal-service
+  spec:
+    clusterIP: None
+    ports:
+    - name: 27017-tcp
+      port: 27017
+      protocol: TCP
+      targetPort: 27017
+    selector:
+      name: mongodb
+    sessionAffinity: None
+- kind: StatefulSet
+  apiVersion: apps/v1
+  metadata:
+    labels:
+      name: mongodb
+    name: mongodb
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        name: mongodb
+    serviceName: mongodb-internal-service
+    template:
+      metadata:
+        labels:
+          name: mongodb
+        name: mongodb
+      spec:
+        containers:
+        - env:
+          - name: MONGODB_KEYFILE_VALUE
+            valueFrom:
+              secretKeyRef:
+                key: database-keyfile-value
+                name: mongodb
+          - name: MONGODB_REPLICA_NAME
+            value: "rs0"
+          - name: MONGODB_SERVICE_NAME
+            value: "mongodb-internal-service"
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: mongodb
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: mongodb
+          - name: MONGODB_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: mongodb
+          - name: MONGODB_DATABASE
+            value: mongodb
+          image: registry.access.redhat.com/rhscl/mongodb-34-rhel7:latest
+          imagePullPolicy: IfNotPresent
+          command: ["run-mongod-replication"]
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 27017
+            timeoutSeconds: 1
+          name: mongodb
+          ports:
+          - containerPort: 27017
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 27017
+            timeoutSeconds: 1
+          resources:
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /var/lib/mongodb/data
+            name: mongodb
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    volumeClaimTemplates:
+    - kind: PersistentVolumeClaim
+      apiVersion: v1
+      metadata:
+        name: mongodb
+        labels:
+          name: mongodb
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      name: mongodb
+    name: mongodb
+  spec:
+    ports:
+    - name: mongo
+      port: 27017
+      protocol: TCP
+      targetPort: 27017
+    selector:
+      name: mongodb
+    type: ClusterIP
+parameters:
+- description: GENERATED MONGO ADM PWD
+  displayName: MONG DB RANDOM ADM PWD
+  name: MONGODB_ADMIN_PASSWORD_PARAM
+  required: true
+  from: "[a-zA-Z0-9]{16}"
+  generate: expression
+- description: GENERATED MONGO KF VALUE
+  displayName: GENERATED MONGO KF VALUE
+  name: MONGODB_KEYFILE_PARAM_VALUE
+  required: true
+  from: "[a-zA-Z0-9]{16}"
+  generate: expression

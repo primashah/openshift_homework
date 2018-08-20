@@ -1,0 +1,313 @@
+apiVersion: v1
+items:
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: nationalparks
+    name: nationalparks-blue
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      app: nationalparks
+      deploymentconfig: nationalparks-blue
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 100m
+        limits:
+          memory: 256Mi
+          cpu: 100m
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 850
+        updatePeriodSeconds: 1
+        post:
+          failurePolicy: ignore
+          execNewPod:
+            command: ["curl","http://nationalparks-blue:8080/ws/data/load/"]
+            conatinerName: nationalparks
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: nationalparks
+          deploymentconfig: nationalparks-blue
+      spec:
+        containers:
+        - image: nationalparks:0.0
+          imagePullPolicy: Always
+          name: nationalparks
+          env:
+          - name: APPNAME
+            value: National Parks (Blue)
+          - name: DB_HOST
+            value: mongodb
+          - name: DB_PORT
+            value: "27017"
+          - name: DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: mongodb
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: mongodb
+          - name: DB_NAME
+            value: mongodb
+          - name: DB_REPLICASET
+            value: rs0
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 8443
+            protocol: TCP
+          - containerPort: 8778
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          readinessProbe:
+            initialDelaySeconds: 60
+            httpGet:
+              path: /ws/info/
+              port: 8080
+          livenessProbe:
+            initialDelaySeconds: 60
+            httpGet:
+              path: /ws/info/
+              port: 8080
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers: []
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: nationalparks
+      type: parksmap-backend
+    name: nationalparks
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+    selector:
+      app: nationalparks
+      deploymentconfig: nationalparks-green
+    sessionAffinity: None
+    type: ClusterIP
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: nationalparks
+    name: nationalparks-green
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+    selector:
+      app: nationalparks
+      deploymentconfig: nationalparks-green
+    sessionAffinity: None
+    type: ClusterIP
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: nationalparks
+    name: nationalparks-blue
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+    selector:
+      app: nationalparks
+      deploymentconfig: nationalparks-blue
+    sessionAffinity: None
+    type: ClusterIP
+- kind: Route
+  apiVersion: v1
+  metadata:
+    labels:
+      app: nationalparks
+    name: nationalparks-green
+  spec:
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: nationalparks-green
+      weight: 100
+    wildcardPolicy: None
+- kind: Route
+  apiVersion: v1
+  metadata:
+    labels:
+      app: nationalparks
+    name: nationalparks-blue
+  spec:
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: nationalparks-blue
+      weight: 100
+    wildcardPolicy: None
+- kind: Route
+  apiVersion: v1
+  metadata:
+    labels:
+      app: nationalparks
+    name: nationalparks
+  spec:
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: nationalparks
+      weight: 100
+    wildcardPolicy: None
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    labels:
+      app: nationalparks
+    name: nationalparks
+  spec:
+    lookupPolicy:
+      local: false
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: nationalparks
+    name: nationalparks-green
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      app: nationalparks
+      deploymentconfig: nationalparks-green
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 100m
+        limits:
+          memory: 256Mi
+          cpu: 110m
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 800
+        updatePeriodSeconds: 1
+        post:
+          failurePolicy: ignore
+          execNewPod:
+            command: ["curl","http://nationalparks-green:8080/ws/data/load/"]
+            conatinerName: nationalparks
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: nationalparks
+          deploymentconfig: nationalparks-green
+      spec:
+        containers:
+        - image: nationalparks:0.0
+          imagePullPolicy: Always
+          name: nationalparks
+          env:
+          - name: APPNAME
+            value: National Parks (Green)
+          - name: DB_HOST
+            value: mongodb
+          - name: DB_PORT
+            value: "27017"
+          - name: DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: mongodb
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: mongodb
+          - name: DB_NAME
+            value: mongodb
+          - name: DB_REPLICASET
+            value: rs0
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 8443
+            protocol: TCP
+          - containerPort: 8778
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          readinessProbe:
+            initialDelaySeconds: 60
+            httpGet:
+              path: /ws/info/
+              port: 8080
+          livenessProbe:
+            initialDelaySeconds: 60
+            httpGet:
+              path: /ws/info/
+              port: 8080
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers: []
+kind: List
+metadata: {}
