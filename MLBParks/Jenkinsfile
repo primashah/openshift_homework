@@ -103,7 +103,9 @@ podTemplate(
     def activeApp = ""
 
     stage('Blue/Green Production Deployment') {
-      activeApp = sh(returnStdout: true, script: "oc get route mlbparks -n $GUID-parks-prod -o jsonpath='{ .spec.to.name }'")
+      activeApp = sh returnStdout: true, script: "oc get route/mlbparks -n $GUID-parks-prod --template=\"{{.spec.to.name}}\""
+            
+
 
       if (activeApp == "mlbparks-green") {
         destApp = "mlbparks-blue"
