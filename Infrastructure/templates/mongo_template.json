@@ -278,7 +278,7 @@
           "displayName": "Volume Capacity",
           "name": "VOLUME_CAPACITY",
           "required": true,
-          "value": "1Gi"
+          "value": "4Gi"
       },
       {
           "description": "Version of MongoDB image to be used (2.4, 2.6, 3.2 or latest).",

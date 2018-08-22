@@ -17,21 +17,21 @@ oc policy add-role-to-user view --serviceaccount=default -n $GUID-parks-dev
 oc policy add-role-to-user edit system:serviceaccount:$GUID-jenkins:jenkins -n $GUID-parks-dev
 
 MONGODB_DATABASE="mongodb"
-MONGODB_USERNAME="mongodb_user"
+MONGODB_USER="mongodb_user"
 MONGODB_PASSWORD="mongodb_password"
 MONGODB_SERVICE_NAME="mongodb"
 MONGODB_ADMIN_PASSWORD="mongodb_admin_password"
-MONGODB_VOLUME="4Gi"
+VOLUME_CAPACITY="4Gi"
 
 echo "Creating  mongodb in project ${GUID}-parks-dev"
 oc new-app -f ./Infrastructure/templates/mongo_template.json \
     -n $GUID-parks-dev\
     --param MONGODB_DATABASE=${MONGODB_DATABASE}\
-    --param MONGODB_USERNAME=${MONGODB_USERNAME}\
+    --param MONGODB_USER=${MONGODB_USER}\
     --param MONGODB_PASSWORD=${MONGODB_PASSWORD}\
     --param MONGODB_ADMIN_PASSWORD=${MONGODB_ADMIN_PASSWORD}\
-    --param MONGODB_VOLUME=${MONGODB_VOLUME}\
-    --param MONGODB_SERVICE_NAME=${MONGODB_SERVICE_NAME}
+    --param VOLUME_CAPACITY=${VOLUME_CAPACITY}\
+    --param DATABASE_SERVICE_NAME=${MONGODB_SERVICE_NAME}
 
 
 # config map
@@ -39,7 +39,7 @@ echo "Creating  configmap in project ${GUID}-parks-dev"
 oc create configmap parks-mongodb-config \
     --from-literal=DB_HOST=${MONGODB_SERVICE_NAME}\
     --from-literal=DB_PORT=27017\
-    --from-literal=DB_USERNAME=${MONGODB_USERNAME}\
+    --from-literal=DB_USERNAME=${MONGODB_USER}\
     --from-literal=DB_PASSWORD=${MONGODB_PASSWORD}\
     --from-literal=DB_NAME=${MONGODB_DATABASE}\
     --from-literal=DB_REPLICASET=rs0\
@@ -84,7 +84,7 @@ oc new-app $GUID-parks-dev/nationalparks:latest --name=nationalparks \
     -e APPNAME="National Parks (Dev)" \
     -e DB_HOST=$MONGODB_SERVICE_NAME \
     -e DB_PORT=27017 \
-    -e DB_USERNAME=$MONGODB_USERNAME \
+    -e DB_USERNAME=$MONGODB_USER \
     -e DB_PASSWORD=$MONGODB_PASSWORD \
     -e DB_NAME=$MONGODB_DATABASE \
     -n $GUID-parks-dev
@@ -116,7 +116,7 @@ oc new-app $GUID-parks-dev/mlbparks:latest --name=mlbparks --allow-missing-image
  -e APPNAME="MLB Parks (Dev)" \
     -e DB_HOST=$MONGODB_SERVICE_NAME \
     -e DB_PORT=27017 \
-    -e DB_USERNAME=$MONGODB_USERNAME \
+    -e DB_USERNAME=$MONGODB_USER \
     -e DB_PASSWORD=$MONGODB_PASSWORD \
     -e DB_NAME=$MONGODB_DATABASE \
     -n $GUID-parks-dev
