@@ -1,5 +1,3 @@
-def GUID="prima"
-def CLUSTER = "na39.openshift.opentlc.com"
 // Jenkinsfile for mlbparks
 podTemplate(
   label: "skopeo-pod",
